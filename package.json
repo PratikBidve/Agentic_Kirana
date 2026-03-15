@@ -10,7 +10,9 @@
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "test": "bun test",
+    "test:watch": "bun test --watch"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
@@ -23,6 +25,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.15.3",
+    "bun-types": "latest",
     "drizzle-kit": "^0.31.9",
     "tsx": "^4.21.0",
     "wrangler": "^4.73.0"
