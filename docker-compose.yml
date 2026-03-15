@@ -3,7 +3,7 @@ name: app
 services:
   db:
     container_name: app_db
-    image: postgres
+    image: postgres:17
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
