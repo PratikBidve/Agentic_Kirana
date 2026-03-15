@@ -1,23 +1,32 @@
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { createDb } from "@/db";
-import { openAPI } from "better-auth/plugins"
-import { Environment } from "@/env";
+import { betterAuth } from 'better-auth';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { openAPI } from 'better-auth/plugins';
+import { createDb } from '@/db';
+import { Environment } from '@/env';
 
-export const createAuth = (env: Environment) => {
-  const db = createDb(env); // create db per request
-  return betterAuth({
+let _auth: ReturnType<typeof betterAuth> | null = null;
+let _authSecret: string | null = null;
+
+// Singleton: betterAuth is expensive to instantiate, reuse per worker lifecycle
+export function createAuth(env: Environment) {
+  if (_auth && _authSecret === env.BETTER_AUTH_SECRET) {
+    return _auth;
+  }
+  const db = createDb(env);
+  _auth = betterAuth({
+    secret: env.BETTER_AUTH_SECRET,
+    baseURL: env.BETTER_AUTH_URL,
     socialProviders: {
       google: {
-        clientId: env.GOOGLE_CLIENT_ID!,
-        clientSecret: env.GOOGLE_CLIENT_SECRET!,
+        clientId: env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
       },
     },
     database: drizzleAdapter(db, {
-      provider: "pg"
+      provider: 'pg',
     }),
-    plugins: [
-      openAPI(),
-    ]
+    plugins: [openAPI()],
   });
-};
+  _authSecret = env.BETTER_AUTH_SECRET;
+  return _auth;
+}
