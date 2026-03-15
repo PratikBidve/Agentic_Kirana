@@ -7,13 +7,21 @@ const withSession: MiddlewareHandler<AppBindings> = async (c, next) => {
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
 
   if (!session) {
-    c.set("user", null);
-    c.set("session", null);
+    c.set('user', null);
+    c.set('session', null);
     return next();
   }
 
-  c.set("user", session.user);
-  c.set("session", session.session);
+  c.set('user', {
+    ...session.user,
+    image: session.user.image ?? null,
+  });
+
+  c.set('session', {
+    ...session.session,
+    ipAddress: session.session.ipAddress ?? null,
+    userAgent: session.session.userAgent ?? null,
+  });
 
   return next();
 };

@@ -4,7 +4,8 @@ import { openAPI } from 'better-auth/plugins';
 import { createDb } from '@/db';
 import { Environment } from '@/env';
 
-let _auth: ReturnType<typeof betterAuth> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _auth: any = null;
 let _authSecret: string | null = null;
 
 // Singleton: betterAuth is expensive to instantiate, reuse per worker lifecycle
