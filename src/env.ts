@@ -1,25 +1,30 @@
 import { z } from "zod";
 
-
 const EnvSchema = z.object({
-  NODE_ENV: z.string().default("development"),
-  DATABASE_URL: z.string().url(),
-  GOOGLE_CLIENT_ID: z.string(),
-  GOOGLE_CLIENT_SECRET: z.string(),
-  BETTER_AUTH_SECRET: z.string(),
-  BETTER_AUTH_URL: z.string().url(),
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  DATABASE_URL: z.url(),
+  GOOGLE_CLIENT_ID: z.string().min(1),
+  GOOGLE_CLIENT_SECRET: z.string().min(1),
+  BETTER_AUTH_SECRET: z.string().min(1),
+  BETTER_AUTH_URL: z.url()
 });
 
 export type Environment = z.infer<typeof EnvSchema>;
 
-export function parseEnv(data: any) {
-  const { data: env, error } = EnvSchema.safeParse(data);
+export function parseEnv(data: unknown): Environment {
+  const parsed = EnvSchema.safeParse(data);
 
-  if (error) {
-    const errorMessage = `error: invalid env:\n${Object.entries(error.flatten().fieldErrors).map(([key, errors]) => `${key}: ${errors.join(', ')}`).join('\n')}`;
-    throw new Error(errorMessage);
+  if (parsed.success) {
+    return parsed.data;
   }
-  
-  return env;
+
+  const tree = z.treeifyError(parsed.error);
+
+  const message = Object.entries(tree.properties ?? {})
+    .map(([key, value]) => `${key}: ${value.errors?.join(", ") ?? "Invalid value"}`)
+    .join("\n");
+
+  throw new Error(`Invalid environment variables:\n${message}`);
 }
 
+export const env = Object.freeze(parseEnv(process.env));
