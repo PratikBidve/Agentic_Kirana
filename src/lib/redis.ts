@@ -1,31 +1,27 @@
 import { Redis } from 'ioredis';
-import { Environment } from '@/env';
+
+type Env = { REDIS_URL: string };
 
 let _redis: Redis | null = null;
 
-// Singleton Redis client — reuse across requests in same worker lifecycle
-export function getRedis(env: Environment): Redis {
-  if (_redis) return _redis;
-  _redis = new Redis(env.REDIS_URL, {
-    maxRetriesPerRequest: 3,
-    retryStrategy: (times) => Math.min(times * 100, 3000),
-    lazyConnect: true,
-  });
-  _redis.on('error', (err) => console.error('[Redis] connection error:', err));
+export function getRedis(env: Env): Redis {
+  if (!_redis) {
+    _redis = new Redis(env.REDIS_URL);
+  }
   return _redis;
 }
 
 /**
- * Push an agent job to the queue consumed by FastAPI/LangGraph worker
+ * Enqueue an agent job onto Redis list (LPUSH — worker does BRPOP from right).
+ * waPhone is optional — only set for WhatsApp-originated messages.
  */
 export async function enqueueAgentJob(
   redis: Redis,
   jobId: string,
   storeId: string,
-  input: string
+  input: string,
+  waPhone?: string
 ): Promise<void> {
-  await redis.lpush(
-    'agent_jobs',
-    JSON.stringify({ jobId, storeId, input, enqueuedAt: new Date().toISOString() })
-  );
+  const payload = JSON.stringify({ jobId, storeId, input, waPhone: waPhone ?? null });
+  await redis.lpush('agent_jobs', payload);
 }
